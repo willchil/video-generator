@@ -1,0 +1,21 @@
+Your task is to read the story provided below, and write a several sentence description that depicts the imagery of the scene at a given point in the story. A comment will denote which line to write the description for, and it will be repeated at the end of the story. Do not use any specific names of characters that are in the story, and refer to them instead by how they look, including age, gender, and outfit. Your description should include the immediate setting, current actions and positions of the characters. Do not describe elements that do not impact the appearance of the scene, such as the larger setting, audible sounds, the characters' inner thoughts, dialogue, or events that only happen before or after the given line. Be very direct and clear in your descriptions, avoiding poetic language. Describe the moment in time, rather than longer term actions. It should be enough for someone to visualize what they would see if they were watching the story unfold. Only describe details that can be seen visually.
+
+-- BEGIN STORY --
+
+<BEFORE>
+
+-- This is the part of the story to write the description about --
+
+<LINE>
+
+-- Story continues --
+
+<AFTER>
+
+-- END STORY --
+
+The relevant section of the story to write the description for is reproduced below:
+
+> <LINE>
+
+Now, please write the description. As a reminder, do not address characters by their names. Respond immediately with only the description, and no additional text.

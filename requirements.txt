@@ -1,0 +1,8 @@
+moviepy
+opencv-python
+nltk
+torch
+ChatTTS
+torchaudio
+soundfile
+unidecode
