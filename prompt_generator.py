@@ -1,5 +1,6 @@
 import requests
 import sys
+import os
 from video import parse_lines
 from video import SOURCE_DIRECTORY
 
@@ -33,12 +34,14 @@ def get_text_prompt(line_index: int, template: str, lines) -> str:
 
 
 def get_response(text_prompt: str) -> str:
-    url = "http://127.0.0.1:5000/v1/chat/completions"
+    url = "http://127.0.0.1:11434/v1/chat/completions"
     headers = { "Content-Type": "application/json" }
-    history = []
-    history.append({ "role": "user", "content": text_prompt })
-
-    data = { "mode": "instruct" , "character": "Assistant" , "messages": history, "max_tokens": 512 }
+    history = [{"role": "user", "content": text_prompt}]
+    data = {
+        "model": "mistral-small:24b",
+        "messages": history,
+        "max_tokens": 512
+    }
     response = requests.post(url, headers=headers, json=data, verify=False)
     result = response.json()['choices'][0]['message']['content']
     return result.replace("\n", " ").strip()
@@ -57,23 +60,20 @@ def generate_scenes(filename: str = "scenes"):
     with open('scene_template.txt', 'r', encoding='utf-8') as file:
         scene_template = file.read()
 
-    # with open('prompt_template.txt', 'r', encoding='utf-8') as file:
-    #     prompt_template = file.read()
-
     prompts = ''
-
-    for index, line in enumerate(lines):
+    path = os.path.join(SOURCE_DIRECTORY, f'{filename}.txt')
+    for index, _ in enumerate(lines):
         print_progress_bar(index, len(lines))
         text_prompt = get_text_prompt(index, scene_template, lines)
         scene_description = get_response(text_prompt)
         prompts += '\n\n' + scene_description
-        with open(f'{SOURCE_DIRECTORY}/{filename}.txt', 'w', encoding='utf-8') as f:
+        with open(path, 'w', encoding='utf-8') as f:
             f.write(prompts)
     print_progress_bar(len(lines), len(lines))
 
     # Write the final sentences to a new file, each on a new line
     prompts = prompts[2:] # Remove leading newline
-    with open(f'{SOURCE_DIRECTORY}/{filename}.txt', 'w', encoding='utf-8') as f:
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(prompts)
 
 if __name__ == "__main__":

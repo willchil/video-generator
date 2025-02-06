@@ -1,5 +1,6 @@
 # video-generator
 content/*
+!content/sample/story.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

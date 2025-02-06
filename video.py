@@ -1,27 +1,29 @@
 import re
 import os
 import textwrap
-from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips, TextClip, CompositeVideoClip, VideoClip, ImageSequenceClip
+from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, TextClip, CompositeVideoClip, VideoClip, ImageSequenceClip
 from typing import List, Tuple
 
-# Constants
+# Settings
 TEXT_COLOR = 'white'
 BACKGROUND_COLOR = 'rgb(185,128,71)'
-WIDTH = 1920
-HEIGHT = 1080
-FRAME_RATE = 4
-SUBTITLE_RATIO = 0.3
-WORDS_PER_MINUTE = 183 # for duration estimation
+WIDTH = 1280
+HEIGHT = 720
+FRAME_RATE = 4 # Rendered frames per second
+SUBTITLE_RATIO = 0.3 # Percent height of the screen for captioning
+WORDS_PER_MINUTE = 183 # For duration estimation
 CHARACTERS_PER_LINE = 75
-CROSSFADE_DURATION = 1  # seconds
-SOURCE_DIRECTORY = 'story'
+CROSSFADE_DURATION = 1 # Seconds
+STORY_NAME = 'sample'
 
 
+SOURCE_DIRECTORY = os.path.join('content', STORY_NAME)
 
 def parse_lines() -> List[Tuple[float, str, str]]:
 
     # Read the script file
-    with open(f'{SOURCE_DIRECTORY}/script.txt', 'r', encoding='utf-8') as file:
+    path = os.path.join(SOURCE_DIRECTORY, 'script.txt')
+    with open(path, 'r', encoding='utf-8') as file:
         script_lines = file.readlines()
 
     script_lines = [line.strip() for line in script_lines if line.strip()]
@@ -87,13 +89,13 @@ def generate_image_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
             if not image_path.endswith(".png"):
                 image_path += ".png"
             image_clip: VideoClip = ImageClip(image_path)
-            image_clip = image_clip.set_duration(fade_duration)
-            image_clip = image_clip.set_position(('center', 'center'))
-            image_clip = image_clip.resize(height=HEIGHT)
+            image_clip = image_clip.with_duration(fade_duration)
+            image_clip = image_clip.with_position(('center', 'center'))
+            image_clip = image_clip.resized(height=HEIGHT)
 
             # Apply pan effect
-            image_clip = image_clip.set_position(pan_position(length=fade_duration))
-            image_clip = image_clip.set_start(total_duration)
+            image_clip = image_clip.with_position(pan_position(length=fade_duration))
+            image_clip = image_clip.with_start(total_duration)
 
             # Apply cross fade
             if i > 0:
@@ -107,7 +109,7 @@ def generate_image_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
 
     # Concatenate all image clips with crossfade transition
     final_image_clip = CompositeVideoClip(image_clips)
-    final_image_clip = final_image_clip.set_duration(total_duration)
+    final_image_clip = final_image_clip.with_duration(total_duration)
 
     return final_image_clip
 
@@ -121,14 +123,14 @@ def generate_subtitle_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
         # Create a text clip for the subtitle
         text = textwrap.fill(text, CHARACTERS_PER_LINE)
         subtitle_clip = TextClip(text, font='Calibri', fontsize=48, color=TEXT_COLOR, bg_color=BACKGROUND_COLOR, size=(WIDTH, height))
-        subtitle_clip = subtitle_clip.set_duration(duration)
+        subtitle_clip = subtitle_clip.with_duration(duration)
 
         # Add the subtitle clip to the list
         subtitle_clips.append(subtitle_clip)
 
     # Concatenate all subtitle clips into one
     final_subtitle_clip = concatenate_videoclips(subtitle_clips, method="chain")
-    final_subtitle_clip = final_subtitle_clip.set_position(('center', HEIGHT - height))
+    final_subtitle_clip = final_subtitle_clip.with_position(('center', HEIGHT - height))
 
     return final_subtitle_clip
 
@@ -138,7 +140,7 @@ def video_from_sequence(directory) -> VideoClip:
     return ImageSequenceClip(frames, fps=FRAME_RATE)
 
 
-def generate_video(filename: str = "output"):
+def generate_video(filename: str = 'video'):
     # Generate image and subtitle clips
     lines = parse_lines()
     print("Lines parsed...")
@@ -152,18 +154,19 @@ def generate_video(filename: str = "output"):
 
     # Write final video with audio
     final_video = CompositeVideoClip([image_clip, subtitle_clip], size=(WIDTH, HEIGHT))
-    final_video = final_video.set_duration(total_duration)
+    final_video = final_video.with_duration(total_duration)
     #final_video = generate_video(f'{SOURCE_DIRECTORY}/frames')
 
     # Add the audio, truncated to the total length
-    audio_path = f'{SOURCE_DIRECTORY}/audio.mp3'
+    audio_path = os.path.join(SOURCE_DIRECTORY, 'audio.mp3')
     if os.path.isfile(audio_path):
         final_audio = AudioFileClip(audio_path).subclip(0, total_duration)
         final_video = final_video.set_audio(final_audio)
 
     # Write the final video file
-    final_video.write_videofile(f'{SOURCE_DIRECTORY}/{filename}.mp4', fps=FRAME_RATE, codec='hevc_nvenc', threads=32)
+    video_path = os.path.join(SOURCE_DIRECTORY, f'{filename}.mp4')
+    final_video.write_videofile(video_path, fps=FRAME_RATE, codec='hevc_nvenc', threads=32)
     #final_video.write_images_sequence(f'{SOURCE_DIRECTORY}/frames/frame%05d.png', fps=FRAME_RATE)
 
 if __name__ == "__main__":
-    generate_video("output-temp")
+    generate_video("video-temp")

@@ -10,6 +10,7 @@ def split_lines(text: str, max_characters: int) -> List[str]:
     paragraphs = [line.strip() for line in paragraphs if line.strip()]
 
     script: List[str] = []
+    nltk.download('punkt_tab')
 
     for paragraph in paragraphs:
 
@@ -29,12 +30,12 @@ def split_lines(text: str, max_characters: int) -> List[str]:
 
     # Procedurally assigned duration and image markers
     total_images = 0
-    segment_indices = divide_into_segments(script, 30)
+    segment_indices = divide_into_segments(script, 15)
     for index in range(len(script)):
         duration = approximate_duration(script[index])
         formatted = f"[{duration:.2f}] {script[index]}"
         if index in segment_indices:
-            #formatted = f"[{total_images}.png] {formatted}"
+            formatted = f"[{total_images}.png] {formatted}"
             total_images += 1
         script[index] = formatted
 
@@ -42,6 +43,13 @@ def split_lines(text: str, max_characters: int) -> List[str]:
 
 
 def divide_into_segments(lines, target):
+    """
+    Divides lines from the script out into groups for each image.
+
+    Parameters:
+    lines (List[str]): The lines from the script
+    target (int): The target duration in seconds for each image
+    """
 
     durations = [approximate_duration(line) for line in lines]
 

@@ -1,8 +1,8 @@
 moviepy
 opencv-python
 nltk
+requests
 torch
-ChatTTS
 torchaudio
 soundfile
 unidecode

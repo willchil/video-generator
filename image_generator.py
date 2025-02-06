@@ -4,12 +4,9 @@ import base64
 import os
 
 
-images_directory = os.path.join(f"{SOURCE_DIRECTORY}", "images")
-
-
 def generate_image(prompt: str, name: str):
 
-    url = "http://127.0.0.1:7861"
+    url = "http://127.0.0.1:7860"
     payload = {
         "prompt": prompt,
         "steps": 20,
@@ -18,15 +15,19 @@ def generate_image(prompt: str, name: str):
         # "width": 1024,
         # "height": 1024,
         "override_settings": {
-            'sd_model_checkpoint': "dynavisionXLAllInOneStylized_release0557Bakedvae",  # this can use to switch sd model
+            'sd_model_checkpoint': "sdxl",  # this can use to switch sd model
         },
     }
     response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload).json()
-
     images = response["images"]
+
+    images_directory = os.path.join(f"{SOURCE_DIRECTORY}", "images")
+    if not os.path.exists(images_directory):
+        os.makedirs(images_directory)
+
     for index, image in enumerate(images):
-        file_name = name if len(images)==1 else f'{name}-{index}'
-        save_path = os.path.join(images_directory, f'{file_name}.png')
+        filename = name if len(images)==1 else f'{name}-{index}'
+        save_path = os.path.join(images_directory, f'{filename}.png')
         with open(save_path, "wb") as file:
             file.write(base64.b64decode(image))
 
@@ -34,7 +35,8 @@ def generate_image(prompt: str, name: str):
 def get_prompts():
 
     # Read the scene file
-    with open(f'{SOURCE_DIRECTORY}/scenes.txt', 'r', encoding='utf-8') as file:
+    path = os.path.join(SOURCE_DIRECTORY, 'scenes.txt')
+    with open(path, 'r', encoding='utf-8') as file:
         scenes = file.readlines()
     scenes = [scene.strip() for scene in scenes if scene.strip()]
 
