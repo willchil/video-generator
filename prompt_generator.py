@@ -1,8 +1,9 @@
+import os
 import requests
 import sys
-import os
-from video import parse_lines
-from video import SOURCE_DIRECTORY
+from settings import PromptGeneration
+from video import SOURCE_DIRECTORY, parse_lines
+
 
 def get_image_segments():
     lines = [(line[1], line[2]) for line in parse_lines()]
@@ -23,7 +24,6 @@ def get_text_prompt(line_index: int, template: str, lines) -> str:
    line = lines[line_index]
    before = '\n'.join(lines[:line_index])
    after = '\n'.join(lines[line_index+1:])
-   #after = "Story continues..."
 
    # Replace placeholders in template
    formatted = template.replace('<LINE>', line)
@@ -34,13 +34,13 @@ def get_text_prompt(line_index: int, template: str, lines) -> str:
 
 
 def get_response(text_prompt: str) -> str:
-    url = "http://127.0.0.1:11434/v1/chat/completions"
+    url = f'http://{PromptGeneration.HOST}:{PromptGeneration.PORT}/v1/chat/completions'
     headers = { "Content-Type": "application/json" }
     history = [{"role": "user", "content": text_prompt}]
     data = {
-        "model": "mistral-small:24b",
+        "model": PromptGeneration.MODEL,
         "messages": history,
-        "max_tokens": 512
+        "max_tokens": 1024
     }
     response = requests.post(url, headers=headers, json=data, verify=False)
     result = response.json()['choices'][0]['message']['content']

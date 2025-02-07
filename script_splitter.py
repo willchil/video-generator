@@ -1,8 +1,9 @@
-from video import SOURCE_DIRECTORY
-from video import approximate_duration
-from typing import List
 import numpy as np
 import nltk
+from video import SOURCE_DIRECTORY, approximate_duration
+from settings import ScriptSplitter
+from typing import List
+
 
 def split_lines(text: str, max_characters: int) -> List[str]:
 
@@ -11,6 +12,7 @@ def split_lines(text: str, max_characters: int) -> List[str]:
 
     script: List[str] = []
     nltk.download('punkt_tab')
+    sentence_seperator = ' '
 
     for paragraph in paragraphs:
 
@@ -19,18 +21,18 @@ def split_lines(text: str, max_characters: int) -> List[str]:
 
         current_line = ""
         for sentence in sentences:
-            if len(current_line) + len(sentence) + 1 > max_characters:
+            if len(current_line) + len(sentence) + len(sentence_seperator) > max_characters:
                 lines.append(current_line.strip())
                 current_line = sentence
             else:
-                current_line += " " + sentence
+                current_line += f'{sentence_seperator}{sentence}'
 
         lines.append(current_line.strip())
         script.extend(lines)
 
     # Procedurally assigned duration and image markers
     total_images = 0
-    segment_indices = divide_into_segments(script, 15)
+    segment_indices = divide_into_segments(script, ScriptSplitter.TARGET_DURATION)
     for index in range(len(script)):
         duration = approximate_duration(script[index])
         formatted = f"[{duration:.2f}] {script[index]}"
@@ -72,7 +74,7 @@ def generate_script(filename: str = "script"):
     # Test the function with the provided input string
     with open(f"{SOURCE_DIRECTORY}/story.txt", 'r', encoding='utf-8') as f:
         text = f.read()
-    lines = split_lines(text, 300)
+    lines = split_lines(text, ScriptSplitter.MAX_CHARACTERS)
 
     # Write the sentences to a new file, each on a new line
     with open(f"{SOURCE_DIRECTORY}/{filename}.txt", 'w', encoding='utf-8') as f:

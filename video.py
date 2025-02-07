@@ -1,20 +1,10 @@
-import re
 import os
+import re
 import textwrap
-from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, TextClip, CompositeVideoClip, VideoClip, ImageSequenceClip
 from typing import List, Tuple
-
-# Settings
-TEXT_COLOR = 'white'
-BACKGROUND_COLOR = 'rgb(185,128,71)'
-WIDTH = 1280
-HEIGHT = 720
-FRAME_RATE = 4 # Rendered frames per second
-SUBTITLE_RATIO = 0.3 # Percent height of the screen for captioning
-WORDS_PER_MINUTE = 183 # For duration estimation
-CHARACTERS_PER_LINE = 75
-CROSSFADE_DURATION = 1 # Seconds
-STORY_NAME = 'sample'
+from moviepy import ImageClip, AudioFileClip, TextClip, CompositeVideoClip, VideoClip, ImageSequenceClip, concatenate_videoclips
+from moviepy.video.fx.CrossFadeIn import CrossFadeIn
+from settings import VideoGeneration, STORY_NAME
 
 
 SOURCE_DIRECTORY = os.path.join('content', STORY_NAME)
@@ -60,7 +50,7 @@ def parse_lines() -> List[Tuple[float, str, str]]:
 
 def approximate_duration(line: str) -> float:
     words_count = len(re.findall(r'\w+', line))
-    return (words_count / WORDS_PER_MINUTE) * 60
+    return (words_count / VideoGeneration.WORDS_PER_MINUTE) * 60
 
 
 def generate_image_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
@@ -69,7 +59,7 @@ def generate_image_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
     total_duration = 0
 
     def pan_position(length):
-        return lambda t: ('center', (-t / length) * (HEIGHT * SUBTITLE_RATIO))
+        return lambda t: ('center', (-t / length) * (VideoGeneration.HEIGHT * VideoGeneration.SUBTITLE_RATIO))
 
     for i in range(len(rows)):
         duration, image_name, _ = rows[i]
@@ -82,7 +72,7 @@ def generate_image_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
                 j += 1
 
             # Total duration, accounting for crossfade
-            fade_duration = duration + CROSSFADE_DURATION
+            fade_duration = duration + VideoGeneration.CROSSFADE_DURATION
 
             # Create an image clip
             image_path = f'{SOURCE_DIRECTORY}/images/{image_name}'
@@ -91,7 +81,7 @@ def generate_image_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
             image_clip: VideoClip = ImageClip(image_path)
             image_clip = image_clip.with_duration(fade_duration)
             image_clip = image_clip.with_position(('center', 'center'))
-            image_clip = image_clip.resized(height=HEIGHT)
+            image_clip = image_clip.resized(height=VideoGeneration.HEIGHT)
 
             # Apply pan effect
             image_clip = image_clip.with_position(pan_position(length=fade_duration))
@@ -99,7 +89,7 @@ def generate_image_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
 
             # Apply cross fade
             if i > 0:
-                image_clip = image_clip.crossfadein(CROSSFADE_DURATION)
+                image_clip = image_clip.with_effects([CrossFadeIn(VideoGeneration.CROSSFADE_DURATION)])
 
             # Add the image clip to the list
             image_clips.append(image_clip)
@@ -118,11 +108,18 @@ def generate_subtitle_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
     # Initialize a list to hold all subtitle clips
     subtitle_clips = []
 
-    height = int(HEIGHT * SUBTITLE_RATIO)
+    height = int(VideoGeneration.HEIGHT * VideoGeneration.SUBTITLE_RATIO)
     for duration, _, text in rows:
         # Create a text clip for the subtitle
-        text = textwrap.fill(text, CHARACTERS_PER_LINE)
-        subtitle_clip = TextClip(text, font='Calibri', fontsize=48, color=TEXT_COLOR, bg_color=BACKGROUND_COLOR, size=(WIDTH, height))
+        text = textwrap.fill(text, VideoGeneration.CHARACTERS_PER_LINE)
+        subtitle_clip = TextClip(
+            text=text,
+            font=VideoGeneration.FONT,
+            font_size=VideoGeneration.FONT_SIZE,
+            color=VideoGeneration.TEXT_COLOR,
+            bg_color=VideoGeneration.BACKGROUND_COLOR,
+            size=(VideoGeneration.WIDTH, height)
+        )
         subtitle_clip = subtitle_clip.with_duration(duration)
 
         # Add the subtitle clip to the list
@@ -130,14 +127,14 @@ def generate_subtitle_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
 
     # Concatenate all subtitle clips into one
     final_subtitle_clip = concatenate_videoclips(subtitle_clips, method="chain")
-    final_subtitle_clip = final_subtitle_clip.with_position(('center', HEIGHT - height))
+    final_subtitle_clip = final_subtitle_clip.with_position(('center', VideoGeneration.HEIGHT - height))
 
     return final_subtitle_clip
 
 
 def video_from_sequence(directory) -> VideoClip:
     frames = sorted([os.path.join(directory, img) for img in os.listdir(directory) if img.endswith(".png")])
-    return ImageSequenceClip(frames, fps=FRAME_RATE)
+    return ImageSequenceClip(frames, fps=VideoGeneration.FRAME_RATE)
 
 
 def generate_video(filename: str = 'video'):
@@ -152,21 +149,26 @@ def generate_video(filename: str = 'video'):
     # Calculate the total duration of all lines
     total_duration = sum(line[0] for line in lines)
 
-    # Write final video with audio
-    final_video = CompositeVideoClip([image_clip, subtitle_clip], size=(WIDTH, HEIGHT))
+    # Write final video clip
+    final_video = CompositeVideoClip([image_clip, subtitle_clip], size=(VideoGeneration.WIDTH, VideoGeneration.HEIGHT))
     final_video = final_video.with_duration(total_duration)
-    #final_video = generate_video(f'{SOURCE_DIRECTORY}/frames')
 
-    # Add the audio, truncated to the total length
+    # Add the audio if available, truncated to the total length
     audio_path = os.path.join(SOURCE_DIRECTORY, 'audio.mp3')
     if os.path.isfile(audio_path):
         final_audio = AudioFileClip(audio_path).subclip(0, total_duration)
         final_video = final_video.set_audio(final_audio)
 
-    # Write the final video file
-    video_path = os.path.join(SOURCE_DIRECTORY, f'{filename}.mp4')
-    final_video.write_videofile(video_path, fps=FRAME_RATE, codec='hevc_nvenc', threads=32)
-    #final_video.write_images_sequence(f'{SOURCE_DIRECTORY}/frames/frame%05d.png', fps=FRAME_RATE)
+    # Write the final video file or frames
+    if VideoGeneration.GENERATE_FRAMES:
+        frames_dir = os.path.join(SOURCE_DIRECTORY, 'frames')
+        if not os.path.exists(frames_dir):
+            os.makedirs(frames_dir)
+        frames_path = os.path.join(frames_dir, 'frame%06d.png')
+        final_video.write_images_sequence(frames_path, fps=VideoGeneration.FRAME_RATE)
+    else:
+        video_path = os.path.join(SOURCE_DIRECTORY, f'{filename}.mp4')
+        final_video.write_videofile(video_path, fps=VideoGeneration.FRAME_RATE, codec=VideoGeneration.CODEC, threads=32)
 
 if __name__ == "__main__":
     generate_video("video-temp")

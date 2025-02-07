@@ -1,21 +1,20 @@
-from video import SOURCE_DIRECTORY
-import requests
 import base64
 import os
+import requests
+from settings import ImageGeneration
+from video import SOURCE_DIRECTORY
 
 
 def generate_image(prompt: str, name: str):
 
-    url = "http://127.0.0.1:7860"
+    url = f'http://{ImageGeneration.HOST}:{ImageGeneration.PORT}'
     payload = {
         "prompt": prompt,
-        "steps": 20,
-        "width": 1280,
-        "height": 720,
-        # "width": 1024,
-        # "height": 1024,
+        "steps": ImageGeneration.STEPS,
+        "width": ImageGeneration.WIDTH,
+        "height": ImageGeneration.HEIGHT,
         "override_settings": {
-            'sd_model_checkpoint': "sdxl",  # this can use to switch sd model
+            'sd_model_checkpoint': ImageGeneration.MODEL,  # this can use to switch sd model
         },
     }
     response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload).json()
