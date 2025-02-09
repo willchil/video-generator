@@ -36,20 +36,35 @@ def get_text_prompt(line_index: int, template: str, lines) -> str:
 
 
 def get_response(text_prompt: str) -> str:
-    secure = PromptGeneration.PORT in [443, None]
-    url = f'{f'https' if secure else 'http'}://{PromptGeneration.HOST}{'' if secure else f':{PromptGeneration.PORT}'}/v1/chat/completions'
-    headers = { 
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {PromptGeneration.API_KEY}" if PromptGeneration.API_KEY else ""
-    }
-    history = [{"role": "user", "content": text_prompt}]
-    data = {
-        "model": PromptGeneration.MODEL,
-        "messages": history,
-        "max_tokens": 1024
-    }
-    response = requests.post(url, headers=headers, json=data, verify=False)
-    result = response.json()['choices'][0]['message']['content']
+
+    if PromptGeneration.USE_OLLAMA:
+        url = f'http://{PromptGeneration.HOST}:{PromptGeneration.PORT}/api/generate'
+        data = {
+            "model": PromptGeneration.MODEL,
+            "prompt": text_prompt,
+            "stream": False,
+            "options": {
+                "num_ctx": 16384
+            }
+        }
+        response = requests.post(url, json=data)
+        result = response.json()['response']
+
+    else: # OpenAI chat completions API
+        secure = PromptGeneration.PORT in [443, None]
+        url = f'{f'https' if secure else 'http'}://{PromptGeneration.HOST}{'' if secure else f':{PromptGeneration.PORT}'}/v1/chat/completions'
+        headers = { 
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {PromptGeneration.API_KEY}" if PromptGeneration.API_KEY else ""
+        }
+        history = [{"role": "user", "content": text_prompt}]
+        data = {
+            "model": PromptGeneration.MODEL,
+            "messages": history,
+            "max_tokens": 1024
+        }
+        response = requests.post(url, headers=headers, json=data, verify=False)
+        result = response.json()['choices'][0]['message']['content']
 
     # Filter out CoT in reasoning models
     think = "</think>"
@@ -70,7 +85,7 @@ def print_progress_bar(index, total, action):
 def unload_ollama_model():
     def is_localhost(hostname):
         return hostname in ['localhost', '127.0.0.1', '::1'] or socket.gethostbyname(hostname) in ['127.0.0.1', '::1']
-    if not is_localhost(PromptGeneration.HOST): return
+    if not PromptGeneration.USE_OLLAMA or not is_localhost(PromptGeneration.HOST): return
     subprocess.run(['ollama', 'stop', PromptGeneration.MODEL], check = True)
 
 

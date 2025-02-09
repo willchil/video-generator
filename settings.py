@@ -29,10 +29,11 @@ class ImageGeneration:
     HEIGHT = 720 # Height in pixels of each generated image
     STEPS = 20 # Number of diffusion steps to generate each image for
 
-# Settings used to generate prompts through a service compatible with the OpenAI chat completions API
+# Settings used to generate prompts through a compatible LLM API
 class PromptGeneration:
     HOST = '127.0.0.1' # Host address that the API is accessible from
     PORT = 11434 # Port that the API is available through, None for HTTPS
+    USE_OLLAMA = True # Whether to use the native Ollama API instead of the OpenAI chat completions API
     MODEL = 'deepseek-r1:32b' # Name of the model to generate the prompts with
     API_KEY = None
 
