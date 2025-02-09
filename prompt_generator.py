@@ -1,8 +1,10 @@
 import os
 import requests
+import socket
+import subprocess
 import sys
-from settings import PromptGeneration
-from video import SOURCE_DIRECTORY, parse_lines
+from settings import PromptGeneration, SOURCE_DIRECTORY
+from render_clips import parse_lines
 
 
 def get_image_segments():
@@ -34,8 +36,12 @@ def get_text_prompt(line_index: int, template: str, lines) -> str:
 
 
 def get_response(text_prompt: str) -> str:
-    url = f'http://{PromptGeneration.HOST}:{PromptGeneration.PORT}/v1/chat/completions'
-    headers = { "Content-Type": "application/json" }
+    secure = PromptGeneration.PORT in [443, None]
+    url = f'{f'https' if secure else 'http'}://{PromptGeneration.HOST}{'' if secure else f':{PromptGeneration.PORT}'}/v1/chat/completions'
+    headers = { 
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {PromptGeneration.API_KEY}" if PromptGeneration.API_KEY else ""
+    }
     history = [{"role": "user", "content": text_prompt}]
     data = {
         "model": PromptGeneration.MODEL,
@@ -46,12 +52,20 @@ def get_response(text_prompt: str) -> str:
     result = response.json()['choices'][0]['message']['content']
     return result.replace("\n", " ").strip()
 
-def print_progress_bar(index, total):
+
+def print_progress_bar(index, total, action):
     n_bar = 50  # Progress bar width
     progress = index / total
     sys.stdout.write('\r')
-    sys.stdout.write(f"[{'=' * int(n_bar * progress):{n_bar}s}] {index} / {total} Scenes generated")
+    sys.stdout.write(f"[{'=' * int(n_bar * progress):{n_bar}s}] {index} / {total} {action}")
     sys.stdout.flush()
+
+
+def unload_ollama_model():
+    def is_localhost(hostname):
+        return hostname in ['localhost', '127.0.0.1', '::1'] or socket.gethostbyname(hostname) in ['127.0.0.1', '::1']
+    if not is_localhost(PromptGeneration.HOST): return
+    subprocess.run(['ollama', 'stop', PromptGeneration.MODEL], check = True)
 
 
 def generate_scenes(filename: str = "scenes"):
@@ -63,18 +77,19 @@ def generate_scenes(filename: str = "scenes"):
     prompts = ''
     path = os.path.join(SOURCE_DIRECTORY, f'{filename}.txt')
     for index, _ in enumerate(lines):
-        print_progress_bar(index, len(lines))
+        print_progress_bar(index, len(lines), 'scenes generated')
         text_prompt = get_text_prompt(index, scene_template, lines)
         scene_description = get_response(text_prompt)
         prompts += '\n\n' + scene_description
         with open(path, 'w', encoding='utf-8') as f:
             f.write(prompts)
-    print_progress_bar(len(lines), len(lines))
+    print_progress_bar(len(lines), len(lines), 'scenes generated\n')
 
     # Write the final sentences to a new file, each on a new line
     prompts = prompts[2:] # Remove leading newline
     with open(path, 'w', encoding='utf-8') as f:
         f.write(prompts)
+
 
 if __name__ == "__main__":
     generate_scenes("scenes-temp")

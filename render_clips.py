@@ -4,10 +4,8 @@ import textwrap
 from typing import List, Tuple
 from moviepy import ImageClip, AudioFileClip, TextClip, CompositeVideoClip, VideoClip, ImageSequenceClip, concatenate_videoclips
 from moviepy.video.fx.CrossFadeIn import CrossFadeIn
-from settings import VideoGeneration, STORY_NAME
+from settings import VideoGeneration, SOURCE_DIRECTORY
 
-
-SOURCE_DIRECTORY = os.path.join('content', STORY_NAME)
 
 def parse_lines() -> List[Tuple[float, str, str]]:
 
@@ -36,8 +34,6 @@ def parse_lines() -> List[Tuple[float, str, str]]:
                 image_name = match
             line = line.replace(f'[{match}]', '', 1)  # Remove the tag from the line
         line = line.strip()
-        if ("<end>" in line): # End early if delimiter string detected
-            return result
 
         # If no duration was found, calculate it based on words count
         if not duration:
@@ -137,7 +133,7 @@ def video_from_sequence(directory) -> VideoClip:
     return ImageSequenceClip(frames, fps=VideoGeneration.FRAME_RATE)
 
 
-def generate_video(filename: str = 'video'):
+def render_clips(filename: str = 'video'):
     # Generate image and subtitle clips
     lines = parse_lines()
     print("Lines parsed...")
@@ -170,5 +166,6 @@ def generate_video(filename: str = 'video'):
         video_path = os.path.join(SOURCE_DIRECTORY, f'{filename}.mp4')
         final_video.write_videofile(video_path, fps=VideoGeneration.FRAME_RATE, codec=VideoGeneration.CODEC, threads=32)
 
+
 if __name__ == "__main__":
-    generate_video("video-temp")
+    render_clips("video-temp")

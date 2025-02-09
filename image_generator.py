@@ -1,8 +1,8 @@
 import base64
 import os
 import requests
-from settings import ImageGeneration
-from video import SOURCE_DIRECTORY
+from settings import ImageGeneration, SOURCE_DIRECTORY
+from prompt_generator import print_progress_bar
 
 
 def generate_image(prompt: str, name: str):
@@ -14,7 +14,7 @@ def generate_image(prompt: str, name: str):
         "width": ImageGeneration.WIDTH,
         "height": ImageGeneration.HEIGHT,
         "override_settings": {
-            'sd_model_checkpoint': ImageGeneration.MODEL,  # this can use to switch sd model
+            'sd_model_checkpoint': ImageGeneration.MODEL
         },
     }
     response = requests.post(url=f'{url}/sdapi/v1/txt2img', json=payload).json()
@@ -31,6 +31,13 @@ def generate_image(prompt: str, name: str):
             file.write(base64.b64decode(image))
 
 
+def unload_diffusion_model():
+    _ = requests.post(
+        f"http://{ImageGeneration.HOST}:{ImageGeneration.PORT}/sdapi/v1/options",
+        json={"sd_model_checkpoint": "None"}
+    )
+
+
 def get_prompts():
 
     # Read the scene file
@@ -43,8 +50,13 @@ def get_prompts():
 
 
 def generate_prompt_images():
-    for index, scene in enumerate(get_prompts()):
+    prompts = get_prompts()
+    count = len(prompts)
+    for index, scene in enumerate(prompts):
+        print_progress_bar(index, count, "images generated")
         generate_image(scene, str(index))
+    print_progress_bar(count, count, "images generated\n")
+
 
 if __name__ == "__main__":
     generate_prompt_images()

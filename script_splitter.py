@@ -1,7 +1,8 @@
 import numpy as np
 import nltk
-from video import SOURCE_DIRECTORY, approximate_duration
-from settings import ScriptSplitter
+import os
+from render_clips import approximate_duration
+from settings import ScriptSplitter, SOURCE_DIRECTORY
 from typing import List
 
 
@@ -30,12 +31,11 @@ def split_lines(text: str, max_characters: int) -> List[str]:
         lines.append(current_line.strip())
         script.extend(lines)
 
-    # Procedurally assigned duration and image markers
+    # Procedurally assigned image markers
     total_images = 0
     segment_indices = divide_into_segments(script, ScriptSplitter.TARGET_DURATION)
     for index in range(len(script)):
-        duration = approximate_duration(script[index])
-        formatted = f"[{duration:.2f}] {script[index]}"
+        formatted = script[index]
         if index in segment_indices:
             formatted = f"[{total_images}.png] {formatted}"
             total_images += 1
@@ -70,14 +70,16 @@ def divide_into_segments(lines, target):
     return indices
 
 
-def generate_script(filename: str = "script"):
+def generate_script(filename: str = 'script'):
     # Test the function with the provided input string
-    with open(f"{SOURCE_DIRECTORY}/story.txt", 'r', encoding='utf-8') as f:
+    story_path = os.path.join(SOURCE_DIRECTORY, 'story.txt')
+    with open(story_path, 'r', encoding='utf-8') as f:
         text = f.read()
     lines = split_lines(text, ScriptSplitter.MAX_CHARACTERS)
 
     # Write the sentences to a new file, each on a new line
-    with open(f"{SOURCE_DIRECTORY}/{filename}.txt", 'w', encoding='utf-8') as f:
+    file_path = os.path.join(SOURCE_DIRECTORY, f'{filename}.txt')
+    with open(file_path, 'w', encoding='utf-8') as f:
         for line in lines:
             f.write(line + '\n\n')
 

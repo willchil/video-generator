@@ -1,15 +1,18 @@
+import os
+import sys
+
 
 STORY_NAME = 'sample' # Name of the subdirectory in 'contents' to operate with
 
 # Settings used in the final video generation step
 class VideoGeneration:
-    FRAME_RATE = 4 # Rendered frames per second
+    FRAME_RATE = 24 # Rendered frames per second
     WIDTH = 1280 # Widght in pixels of the resulting video
     HEIGHT = 720 # Height in pixels of the resulting video
     SUBTITLE_RATIO = 0.3 # Percent height of the screen for captioning
     TEXT_COLOR = 'white' # Color that the captioning text will be rendered in
     BACKGROUND_COLOR = 'rgb(185,128,71)' # Color of the background behind the captioning text
-    WORDS_PER_MINUTE = 183 # Used to set duration of each scene with durations are not explicitly provided
+    WORDS_PER_MINUTE = 183 # Used to set duration of each scene when durations are not explicitly provided
     CHARACTERS_PER_LINE = 75 # Maximum number of characters shown on screen at a time
     CROSSFADE_DURATION = 1 # During of crossfade between images in seconds
     GENERATE_FRAMES = False # Whether to generate a series of frames, or if false, encode the video directly
@@ -17,22 +20,35 @@ class VideoGeneration:
     FONT = 'Arial' # Font of the captioning text
     CODEC = 'libx264' # Codec to encode the final video file with
 
-# Settings used to procedurally split a provided story file into a segmented script
-class ScriptSplitter:
-    MAX_CHARACTERS = 300 # Maximum number of characters that can be displayed in a single caption, will truncate to the last complete sentence
-    TARGET_DURATION = 15 # Target duration to show each image when splitting captions, splits captions using a greedy algorithm
-
 # Settings used when generating images through the AUTOMATIC1111 (or Forge) txt2img API
 class ImageGeneration:
     HOST = '127.0.0.1' # Host address that the API is accessible from
     PORT = 7860 # Port that the API is available through
-    STEPS = 20 # Number of diffusion steps to generate each image for
+    MODEL = 'juggernautXL' # Name of model to use with AUTOMATIC1111
     WIDTH = 1280 # Width in pixels of each generated image
     HEIGHT = 720 # Height in pixels of each generated image
-    MODEL = 'sdxl' # Name of model to use with AUTOMATIC1111
+    STEPS = 20 # Number of diffusion steps to generate each image for
 
 # Settings used to generate prompts through a service compatible with the OpenAI chat completions API
 class PromptGeneration:
     HOST = '127.0.0.1' # Host address that the API is accessible from
-    PORT = 11434 # Port that the API is available through
+    PORT = 11434 # Port that the API is available through, None for HTTPS
     MODEL = 'mistral-small:24b' # Name of the model to generate the prompts with
+    API_KEY = None
+
+# Settings used to procedurally split a provided story file into a segmented script
+class ScriptSplitter:
+    MAX_CHARACTERS = 150 # Maximum number of characters that can be displayed in a single caption, will truncate to the last complete sentence
+    TARGET_DURATION = 5 # Target duration to show each image when splitting captions, splits captions using a greedy algorithm
+
+# Settings used to control the story-to-video generation pipeline process
+class Pipeline:
+    DYNAMICALLY_UNLOAD_OLLAMA = True # Whether to unload the LLM from memory after use, will have no effect if not using Ollama locally
+    DYNAMICALLY_UNLOAD_AUTOMATIC1111 = True # Whether to unload the image diffusion model from memory after use
+
+
+
+
+# The first argument will override STORY_NAME if provided when running
+story_name = sys.argv[1] if len(sys.argv) > 1 else STORY_NAME
+SOURCE_DIRECTORY = os.path.join('content', story_name)
