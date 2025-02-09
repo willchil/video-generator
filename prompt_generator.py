@@ -22,17 +22,17 @@ def get_image_segments():
 
 def get_text_prompt(line_index: int, template: str, lines) -> str:
 
-   # Get the requested line and the lines before and after
-   line = lines[line_index]
-   before = '\n'.join(lines[:line_index])
-   after = '\n'.join(lines[line_index+1:])
+    # Get the requested line and the lines before and after
+    line = lines[line_index]
+    before = '\n'.join(lines[:line_index])
+    after = '\n'.join(lines[line_index+1:])
 
-   # Replace placeholders in template
-   formatted = template.replace('<LINE>', line)
-   formatted = formatted.replace('<BEFORE>', before)
-   formatted = formatted.replace('<AFTER>', after)
+    # Replace placeholders in template
+    formatted = template.replace('<LINE>', line)
+    formatted = formatted.replace('<BEFORE>', before)
+    formatted = formatted.replace('<AFTER>', after)
 
-   return formatted
+    return formatted
 
 
 def get_response(text_prompt: str) -> str:
@@ -50,6 +50,12 @@ def get_response(text_prompt: str) -> str:
     }
     response = requests.post(url, headers=headers, json=data, verify=False)
     result = response.json()['choices'][0]['message']['content']
+
+    # Filter out CoT in reasoning models
+    think = "</think>"
+    think_index = result.find(think)
+    result = result if think_index == -1 else result[think_index + len(think):]
+
     return result.replace("\n", " ").strip()
 
 

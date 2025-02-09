@@ -33,7 +33,7 @@ class ImageGeneration:
 class PromptGeneration:
     HOST = '127.0.0.1' # Host address that the API is accessible from
     PORT = 11434 # Port that the API is available through, None for HTTPS
-    MODEL = 'mistral-small:24b' # Name of the model to generate the prompts with
+    MODEL = 'deepseek-r1:32b' # Name of the model to generate the prompts with
     API_KEY = None
 
 # Settings used to procedurally split a provided story file into a segmented script
