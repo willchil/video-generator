@@ -100,12 +100,12 @@ def generate_image_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
     return final_image_clip
 
 
-def generate_subtitle_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
+def generate_subtitle_clip(rows: List[Tuple[float, str, str]], audio_clips: List[AudioFileClip]) -> VideoClip:
     # Initialize a list to hold all subtitle clips
     subtitle_clips = []
 
     height = int(VideoGeneration.HEIGHT * VideoGeneration.SUBTITLE_RATIO)
-    for duration, _, text in rows:
+    for index, (duration, _, text) in enumerate(rows):
         # Create a text clip for the subtitle
         text = textwrap.fill(text, VideoGeneration.CHARACTERS_PER_LINE)
         subtitle_clip = TextClip(
@@ -117,6 +117,10 @@ def generate_subtitle_clip(rows: List[Tuple[float, str, str]]) -> VideoClip:
             size=(VideoGeneration.WIDTH, height)
         )
         subtitle_clip = subtitle_clip.with_duration(duration)
+
+        # Add the audio clip if one exists
+        if audio_clips[index] is not None:
+            subtitle_clip = subtitle_clip.with_audio(audio_clips[index])
 
         # Add the subtitle clip to the list
         subtitle_clips.append(subtitle_clip)
@@ -134,12 +138,27 @@ def video_from_sequence(directory) -> VideoClip:
 
 
 def render_clips(filename: str = 'video'):
+
     # Generate image and subtitle clips
     lines = parse_lines()
     print("Lines parsed...")
+
+    # Add clip audio files if they exist
+    audio_clips = [None] * len(lines)
+    audio_dir = os.path.join(SOURCE_DIRECTORY, 'audio')
+    if os.path.isdir(audio_dir):
+        for index, (_, image, line) in enumerate(lines):
+            audio_file = os.path.join(audio_dir, f'{index}.wav')
+            if not os.path.isfile(audio_file): continue
+            audio_clip = AudioFileClip(audio_file)
+            audio_clips[index] = audio_clip
+            lines[index] = (audio_clip.duration, image, line)
+    print("Audio files processed...")
+
     image_clip = generate_image_clip(lines)
     print("Image clip generated...")
-    subtitle_clip = generate_subtitle_clip(lines)
+    
+    subtitle_clip = generate_subtitle_clip(lines, audio_clips)
     print("Subtitle clip generated...")
 
     # Calculate the total duration of all lines
@@ -153,7 +172,8 @@ def render_clips(filename: str = 'video'):
     audio_path = os.path.join(SOURCE_DIRECTORY, 'audio.mp3')
     if os.path.isfile(audio_path):
         final_audio = AudioFileClip(audio_path).subclip(0, total_duration)
-        final_video = final_video.set_audio(final_audio)
+        mixed_audio = CompositeVideoClip([final_video.audio, final_audio])
+        final_video = final_video.with_audio(mixed_audio)
 
     # Write the final video file or frames
     if VideoGeneration.GENERATE_FRAMES:
@@ -164,7 +184,13 @@ def render_clips(filename: str = 'video'):
         final_video.write_images_sequence(frames_path, fps=VideoGeneration.FRAME_RATE)
     else:
         video_path = os.path.join(SOURCE_DIRECTORY, f'{filename}.mp4')
-        final_video.write_videofile(video_path, fps=VideoGeneration.FRAME_RATE, codec=VideoGeneration.CODEC, threads=32)
+        final_video.write_videofile(
+            video_path,
+            fps=VideoGeneration.FRAME_RATE,
+            codec=VideoGeneration.CODEC,
+            audio_codec='aac',
+            threads=32
+        )
 
 
 if __name__ == "__main__":

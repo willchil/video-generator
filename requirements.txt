@@ -1,3 +1,5 @@
+kokoro
 moviepy
 nltk
 requests
+soundfile

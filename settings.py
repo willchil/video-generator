@@ -37,6 +37,12 @@ class PromptGeneration:
     MODEL = 'deepseek-r1:32b' # Name of the model to generate the prompts with
     API_KEY = None
 
+# Settings for generating TTS clips of script lines with Kokoro
+class TTSGeneration:
+    VOICE = 'af_heart' # Kokoro voice model
+    SPEED = 1 # Speed multiplier for the generated audio
+    SAMPLE_RATE = 24000 # Sample rate to encode the audio file with
+
 # Settings used to procedurally split a provided story file into a segmented script
 class ScriptSplitter:
     MAX_CHARACTERS = 150 # Maximum number of characters that can be displayed in a single caption, will truncate to the last complete sentence

@@ -52,7 +52,7 @@ def get_response(text_prompt: str) -> str:
 
     else: # OpenAI chat completions API
         secure = PromptGeneration.PORT in [443, None]
-        url = f'{f'https' if secure else 'http'}://{PromptGeneration.HOST}{'' if secure else f':{PromptGeneration.PORT}'}/v1/chat/completions'
+        url = f"{f'https' if secure else 'http'}://{PromptGeneration.HOST}{'' if secure else f':{PromptGeneration.PORT}'}/v1/chat/completions"
         headers = { 
             "Content-Type": "application/json",
             "Authorization": f"Bearer {PromptGeneration.API_KEY}" if PromptGeneration.API_KEY else ""
@@ -61,7 +61,7 @@ def get_response(text_prompt: str) -> str:
         data = {
             "model": PromptGeneration.MODEL,
             "messages": history,
-            "max_tokens": 1024
+            "max_tokens": 2048
         }
         response = requests.post(url, headers=headers, json=data, verify=False)
         result = response.json()['choices'][0]['message']['content']

@@ -1,8 +1,8 @@
 import base64
 import os
 import requests
-from settings import ImageGeneration, SOURCE_DIRECTORY
 from prompt_generator import print_progress_bar
+from settings import ImageGeneration, SOURCE_DIRECTORY
 
 
 def generate_image(prompt: str, name: str):
