@@ -23,7 +23,7 @@ def split_lines(text: str, max_characters: int) -> List[str]:
         current_line = ""
         for sentence in sentences:
             if len(current_line) + len(sentence) + len(sentence_seperator) > max_characters:
-                lines.append(current_line.strip())
+                if current_line.strip(): lines.append(current_line.strip())
                 current_line = sentence
             else:
                 current_line += f'{sentence_seperator}{sentence}'
@@ -33,7 +33,8 @@ def split_lines(text: str, max_characters: int) -> List[str]:
 
     # Procedurally assigned image markers
     total_images = 0
-    segment_indices = divide_into_segments(script, ScriptSplitter.TARGET_DURATION)
+    durations = [approximate_duration(line) for line in script]
+    segment_indices = divide_into_segments(durations, ScriptSplitter.TARGET_DURATION)
     for index in range(len(script)):
         formatted = script[index]
         if index in segment_indices:
@@ -44,30 +45,63 @@ def split_lines(text: str, max_characters: int) -> List[str]:
     return script
 
 
-def divide_into_segments(lines, target):
+def divide_into_segments(durations, target):
     """
-    Divides lines from the script out into groups for each image.
+    Group sentences into subtitle segments so that each segment's total duration 
+    is as close as possible to a fixed target duration, and return the list of indices
+    where each segment begins.
 
     Parameters:
-    lines (List[str]): The lines from the script
-    target (int): The target duration in seconds for each image
+        durations (List[float]): List of sentence durations (in seconds).
+        target (float): The target duration for each subtitle (in seconds).
+    
+    Returns:
+        List[int]: A list of indices indicating where each segment begins.
+                   For example, if the segmentation is [[0, 1], [2], [3, 4]],
+                   the function returns [0, 2, 3].
+    
+    Example:
+        durations = [3.5, 2.0, 4.0, 1.5, 3.0]
+        target = 5.0
+        start_indices = group_sentences_start_indices(durations, target)
+        # One possible output is: [0, 2, 3]
     """
+    n = len(durations)
+    if n == 0:
+        return []
+    
+    # Compute cumulative sums for O(1) range sum queries.
+    prefix = [0] * (n + 1)
+    for i in range(n):
+        prefix[i + 1] = prefix[i] + durations[i]
 
-    durations = [approximate_duration(line) for line in lines]
+    # dp[i] will hold the minimum total cost for segmenting durations[0:i]
+    dp = [float('inf')] * (n + 1)
+    dp[0] = 0  # no sentences -> no cost
 
-    # Initialize the cumulative sum and the list of indices
-    cum_sum = np.cumsum(durations)
-    indices = [0]
+    # prev[i] will store the index where the last segment started for an optimal segmentation of durations[0:i]
+    prev = [0] * (n + 1)
 
-    # Iterate over the cumulative sum
-    for i in range(len(cum_sum)):
-        # If the current cumulative sum minus the sum of the previous segments is greater than the target
-        if cum_sum[i] - cum_sum[indices[-1]] > target:
-            # Add the index to the list of indices
-            indices.append(i)
+    # Fill in dp and prev using dynamic programming.
+    for i in range(1, n + 1):
+        # Try every possible start j for the final segment ending at i-1.
+        for j in range(i):
+            seg_duration = prefix[i] - prefix[j]
+            cost = abs(seg_duration - target)
+            if dp[j] + cost < dp[i]:
+                dp[i] = dp[j] + cost
+                prev[i] = j
 
-    # Return the list of indices
-    return indices
+    # Reconstruct the segmentation to obtain the starting indices.
+    start_indices = []
+    i = n
+    while i > 0:
+        j = prev[i]
+        start_indices.append(j)
+        i = j
+
+    start_indices.reverse()
+    return start_indices
 
 
 def generate_script(filename: str = 'script'):
