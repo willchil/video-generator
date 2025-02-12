@@ -2,9 +2,8 @@ import os
 import requests
 import socket
 import subprocess
-import sys
 from settings import PromptGeneration, SOURCE_DIRECTORY
-from render_clips import parse_lines
+from utility import parse_lines, print_progress_bar
 
 
 def get_image_segments():
@@ -74,14 +73,6 @@ def get_response(text_prompt: str) -> str:
     return result.replace("\n", " ").strip()
 
 
-def print_progress_bar(index, total, action):
-    n_bar = 50  # Progress bar width
-    progress = index / total
-    sys.stdout.write('\r')
-    sys.stdout.write(f"[{'=' * int(n_bar * progress):{n_bar}s}] {index} / {total} {action}")
-    sys.stdout.flush()
-
-
 def unload_ollama_model():
     def is_localhost(hostname):
         return hostname in ['localhost', '127.0.0.1', '::1'] or socket.gethostbyname(hostname) in ['127.0.0.1', '::1']
@@ -113,4 +104,4 @@ def generate_scenes(filename: str = "scenes"):
 
 
 if __name__ == "__main__":
-    generate_scenes("scenes-temp")
+    generate_scenes("scenes")

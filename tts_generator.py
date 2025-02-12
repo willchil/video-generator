@@ -1,12 +1,14 @@
 import os
 import soundfile as sf
 from kokoro import KPipeline
-from prompt_generator import print_progress_bar
+from utility import parse_lines, print_progress_bar
 from settings import TTSGeneration, SOURCE_DIRECTORY
-from render_clips import parse_lines
 
 
 def generate_tts():
+
+    # Skip TTS if no voice is set
+    if not TTSGeneration.VOICE: return
 
     # Make the audio directory if necessary
     audio_dir = os.path.join(SOURCE_DIRECTORY, 'audio')
@@ -14,7 +16,7 @@ def generate_tts():
         os.makedirs(audio_dir)
 
     # Get an ordered list of the lines
-    lines = [item[2] for item in parse_lines()]
+    lines = [item[2] for item in parse_lines('captions')]
 
     # Generate and save audio files in a loop.
     pipeline = KPipeline(lang_code='a') # lang_code must match voice

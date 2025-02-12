@@ -12,7 +12,6 @@ class VideoGeneration:
     SUBTITLE_RATIO = 0.3 # Percent height of the screen for captioning
     TEXT_COLOR = 'white' # Color that the captioning text will be rendered in
     BACKGROUND_COLOR = 'rgb(185,128,71)' # Color of the background behind the captioning text
-    WORDS_PER_MINUTE = 183 # Used to set duration of each scene when durations are not explicitly provided
     CHARACTERS_PER_LINE = 75 # Maximum number of characters shown on screen at a time
     CROSSFADE_DURATION = 1 # During of crossfade between images in seconds
     GENERATE_FRAMES = False # Whether to generate a series of frames, or if false, encode the video directly
@@ -37,16 +36,20 @@ class PromptGeneration:
     MODEL = 'deepseek-r1:32b' # Name of the model to generate the prompts with
     API_KEY = None
 
+# Settings used when adding image annotations to the script
+class ScriptAnnotation:
+    TARGET_DURATION = 10 # Target duration to show each image when splitting captions, splits captions using a greedy algorithm
+    WORDS_PER_MINUTE = 183 # Used to set duration of each scene when durations are not explicitly provided
+
 # Settings for generating TTS clips of script lines with Kokoro
 class TTSGeneration:
-    VOICE = 'af_heart' # Kokoro voice model
+    VOICE = 'af_heart' # Kokoro voice model, None to skip TTS
     SPEED = 1 # Speed multiplier for the generated audio
     SAMPLE_RATE = 24000 # Sample rate to encode the audio file with
 
 # Settings used to procedurally split a provided story file into a segmented script
-class ScriptSplitter:
+class CaptionSplitter:
     MAX_CHARACTERS = 150 # Maximum number of characters that can be displayed in a single caption, will truncate to the last complete sentence
-    TARGET_DURATION = 5 # Target duration to show each image when splitting captions, splits captions using a greedy algorithm
 
 # Settings used to control the story-to-video generation pipeline process
 class Pipeline:

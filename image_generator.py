@@ -1,7 +1,7 @@
 import base64
 import os
 import requests
-from prompt_generator import print_progress_bar
+from utility import print_progress_bar
 from settings import ImageGeneration, SOURCE_DIRECTORY
 
 

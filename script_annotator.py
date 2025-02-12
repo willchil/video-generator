@@ -1,48 +1,6 @@
-import numpy as np
-import nltk
 import os
-from render_clips import approximate_duration
-from settings import ScriptSplitter, SOURCE_DIRECTORY
-from typing import List
-
-
-def split_lines(text: str, max_characters: int) -> List[str]:
-
-    paragraphs = text.split("\n")
-    paragraphs = [line.strip() for line in paragraphs if line.strip()]
-
-    script: List[str] = []
-    nltk.download('punkt_tab')
-    sentence_seperator = ' '
-
-    for paragraph in paragraphs:
-
-        sentences = nltk.sent_tokenize(paragraph)
-        lines: List[str] = []
-
-        current_line = ""
-        for sentence in sentences:
-            if len(current_line) + len(sentence) + len(sentence_seperator) > max_characters:
-                if current_line.strip(): lines.append(current_line.strip())
-                current_line = sentence
-            else:
-                current_line += f'{sentence_seperator}{sentence}'
-
-        lines.append(current_line.strip())
-        script.extend(lines)
-
-    # Procedurally assigned image markers
-    total_images = 0
-    durations = [approximate_duration(line) for line in script]
-    segment_indices = divide_into_segments(durations, ScriptSplitter.TARGET_DURATION)
-    for index in range(len(script)):
-        formatted = script[index]
-        if index in segment_indices:
-            formatted = f"[{total_images}.png] {formatted}"
-            total_images += 1
-        script[index] = formatted
-
-    return script
+from settings import ScriptAnnotation, SOURCE_DIRECTORY
+from utility import approximate_duration, get_audio_clips
 
 
 def divide_into_segments(durations, target):
@@ -52,7 +10,7 @@ def divide_into_segments(durations, target):
     where each segment begins.
 
     Parameters:
-        durations (List[float]): List of sentence durations (in seconds).
+        durations (List[float]): List of caption durations (in seconds).
         target (float): The target duration for each subtitle (in seconds).
     
     Returns:
@@ -63,7 +21,7 @@ def divide_into_segments(durations, target):
     Example:
         durations = [3.5, 2.0, 4.0, 1.5, 3.0]
         target = 5.0
-        start_indices = group_sentences_start_indices(durations, target)
+        start_indices = divide_into_segments(durations, target)
         # One possible output is: [0, 2, 3]
     """
     n = len(durations)
@@ -104,19 +62,33 @@ def divide_into_segments(durations, target):
     return start_indices
 
 
-def generate_script(filename: str = 'script'):
-    # Test the function with the provided input string
-    story_path = os.path.join(SOURCE_DIRECTORY, 'story.txt')
+def annotate_script(filename: str = 'script'):
+
+    # Parse and split the caption file
+    story_path = os.path.join(SOURCE_DIRECTORY, 'captions.txt')
     with open(story_path, 'r', encoding='utf-8') as f:
         text = f.read()
-    lines = split_lines(text, ScriptSplitter.MAX_CHARACTERS)
+    captions = text.split("\n")
+    captions = [line.strip() for line in captions if line.strip()]
+
+    # Procedurally assigned image markers
+    total_images = 0
+    audio_clips = get_audio_clips(len(captions))
+    durations = [audio_clips[i].duration if audio_clips[i] else approximate_duration(line) for i, line in enumerate(captions)]
+    segment_indices = divide_into_segments(durations, ScriptAnnotation.TARGET_DURATION)
+    for index in range(len(captions)):
+        formatted = captions[index]
+        if index in segment_indices:
+            formatted = f"[{total_images}.png] {formatted}"
+            total_images += 1
+        captions[index] = formatted
 
     # Write the sentences to a new file, each on a new line
     file_path = os.path.join(SOURCE_DIRECTORY, f'{filename}.txt')
     with open(file_path, 'w', encoding='utf-8') as f:
-        for line in lines:
+        for line in captions:
             f.write(line + '\n\n')
 
 
 if __name__ == "__main__":
-    generate_script("script-temp")
+    annotate_script("script")
