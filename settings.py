@@ -23,7 +23,7 @@ class VideoGeneration:
 class ImageGeneration:
     HOST = '127.0.0.1' # Host address that the API is accessible from
     PORT = 8000 # Port that the API is available through
-    WORKFLOW = 'workflows/klein9b.json' # Path to the ComfyUI workflow JSON file (exported via File -> Export API)
+    WORKFLOW = 'klein9b.json' # Workflow JSON filename relative to workflows/, or an absolute path
     WIDTH = 1280 # Width in pixels of each generated image
     HEIGHT = 720 # Height in pixels of each generated image
 
@@ -59,5 +59,15 @@ class Pipeline:
 
 
 # The first argument will override STORY_NAME if provided when running
-story_name = sys.argv[1] if len(sys.argv) > 1 else STORY_NAME
-SOURCE_DIRECTORY = os.path.join('content', story_name)
+# Pass --clean to delete existing generated files before each step
+def _resolve_path(value, default_dir):
+    """Resolve a path relative to default_dir, unless it's already absolute."""
+    if os.path.isabs(value):
+        return value
+    return os.path.join(default_dir, value)
+
+args = [a for a in sys.argv[1:] if not a.startswith('-')]
+story_name = args[0] if args else STORY_NAME
+SOURCE_DIRECTORY = _resolve_path(story_name, 'content')
+ImageGeneration.WORKFLOW = _resolve_path(ImageGeneration.WORKFLOW, 'workflows')
+CLEAN = '--clean' in sys.argv
