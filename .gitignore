@@ -1,6 +1,9 @@
 # video-generator
 content/*
 !content/sample/story.txt
+workflows/*
+!workflows/klein9b.json
+!workflows/zit.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

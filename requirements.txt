@@ -3,3 +3,4 @@ moviepy
 nltk
 requests
 soundfile
+websocket-client

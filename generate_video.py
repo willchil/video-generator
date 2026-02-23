@@ -14,5 +14,5 @@ if __name__ == "__main__":
     generate_scenes()
     if Pipeline.DYNAMICALLY_UNLOAD_OLLAMA: unload_ollama_model()
     generate_prompt_images()
-    if Pipeline.DYNAMICALLY_UNLOAD_AUTOMATIC1111: unload_diffusion_model()
+    if Pipeline.DYNAMICALLY_UNLOAD_COMFYUI: unload_diffusion_model()
     render_clips()

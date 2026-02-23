@@ -19,21 +19,20 @@ class VideoGeneration:
     FONT = 'Arial' # Font of the captioning text
     CODEC = 'libx264' # Codec to encode the final video file with
 
-# Settings used when generating images through the AUTOMATIC1111 (or Forge) txt2img API
+# Settings used when generating images through the ComfyUI API
 class ImageGeneration:
     HOST = '127.0.0.1' # Host address that the API is accessible from
-    PORT = 7860 # Port that the API is available through
-    MODEL = 'juggernautXL' # Name of model to use with AUTOMATIC1111
+    PORT = 8000 # Port that the API is available through
+    WORKFLOW = 'workflows/klein9b.json' # Path to the ComfyUI workflow JSON file (exported via File -> Export API)
     WIDTH = 1280 # Width in pixels of each generated image
     HEIGHT = 720 # Height in pixels of each generated image
-    STEPS = 20 # Number of diffusion steps to generate each image for
 
 # Settings used to generate prompts through a compatible LLM API
 class PromptGeneration:
     HOST = '127.0.0.1' # Host address that the API is accessible from
     PORT = 11434 # Port that the API is available through, None for HTTPS
     USE_OLLAMA = True # Whether to use the native Ollama API instead of the OpenAI chat completions API
-    MODEL = 'deepseek-r1:32b' # Name of the model to generate the prompts with
+    MODEL = 'gemma3:27b' # Name of the model to generate the prompts with
     API_KEY = None
 
 # Settings used when adding image annotations to the script
@@ -54,7 +53,7 @@ class CaptionSplitter:
 # Settings used to control the story-to-video generation pipeline process
 class Pipeline:
     DYNAMICALLY_UNLOAD_OLLAMA = True # Whether to unload the LLM from memory after use, will have no effect if not using Ollama locally
-    DYNAMICALLY_UNLOAD_AUTOMATIC1111 = True # Whether to unload the image diffusion model from memory after use
+    DYNAMICALLY_UNLOAD_COMFYUI = True # Whether to unload the image diffusion model from memory after use
 
 
 
