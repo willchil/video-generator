@@ -4,6 +4,8 @@ content/*
 workflows/*
 !workflows/klein9b.json
 !workflows/zit.json
+configs/*
+!configs/default.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

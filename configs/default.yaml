@@ -1,0 +1,52 @@
+story_name: sample # Name of the subdirectory in 'content' to operate with
+
+# Settings used in the final video generation step
+video_generation:
+  frame_rate: 24 # Rendered frames per second
+  width: 1280 # Width in pixels of the resulting video
+  height: 720 # Height in pixels of the resulting video
+  subtitle_ratio: 0.3 # Percent height of the screen for captioning
+  text_color: white # Color that the captioning text will be rendered in
+  background_color: "rgb(185,128,71)" # Color of the background behind the captioning text
+  characters_per_line: 75 # Maximum number of characters shown on screen at a time
+  crossfade_duration: 1 # Duration of crossfade between images in seconds
+  generate_frames: false # Whether to generate a series of frames, or if false, encode the video directly
+  font_size: 32 # Size of the captioning text
+  font: Arial # Font of the captioning text
+  codec: libx264 # Codec to encode the final video file with
+
+# Settings used when generating images through the ComfyUI API
+image_generation:
+  host: 127.0.0.1 # Host address that the API is accessible from
+  port: 8000 # Port that the API is available through
+  workflow: klein9b.json # Workflow JSON filename relative to workflows/, or an absolute path
+  width: 1280 # Width in pixels of each generated image
+  height: 720 # Height in pixels of each generated image
+
+# Settings used to generate prompts through a compatible LLM API
+prompt_generation:
+  host: 127.0.0.1 # Host address that the API is accessible from
+  port: 11434 # Port that the API is available through, null for HTTPS
+  use_ollama: true # Whether to use the native Ollama API instead of the OpenAI chat completions API
+  model: "gemma3:27b" # Name of the model to generate the prompts with
+  api_key: null
+
+# Settings used when adding image annotations to the script
+script_annotation:
+  target_duration: 10 # Target duration to show each image when splitting captions, splits captions using dynamic programming
+  words_per_minute: 183 # Used to set duration of each scene when durations are not explicitly provided
+
+# Settings for generating TTS clips of script lines with Kokoro
+tts_generation:
+  voice: af_heart # Kokoro voice model, null to skip TTS
+  speed: 1 # Speed multiplier for the generated audio
+  sample_rate: 24000 # Sample rate to encode the audio file with
+
+# Settings used to procedurally split a provided story file into a segmented script
+caption_splitter:
+  max_characters: 150 # Maximum number of characters that can be displayed in a single caption, will truncate to the last complete sentence
+
+# Settings used to control the story-to-video generation pipeline process
+pipeline:
+  dynamically_unload_ollama: true # Whether to unload the LLM from memory after use, will have no effect if not using Ollama locally
+  dynamically_unload_comfyui: true # Whether to unload the image diffusion model from memory after use
