@@ -1,6 +1,7 @@
 kokoro
 moviepy
 nltk
+pyyaml
 requests
 soundfile
 websocket-client
